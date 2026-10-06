@@ -1,0 +1,12 @@
+{
+  "generator.indev2.finite_island": "Finite Island",
+  "indev2.island.title": "Customize Finite Island",
+  "indev2.island.biome": "Biome: %s",
+  "indev2.island.radius": "Island radius (blocks)",
+  "indev2.island.margin": "Ocean margin (blocks)",
+  "indev2.island.radius.range": "128\u20138,192 blocks",
+  "indev2.island.margin.range": "32\u20134,096 blocks",
+  "indev2.island.width": "World border width: %s blocks",
+  "indev2.island.invalid": "Enter whole numbers within the ranges above.",
+  "indev2.island.description": "One biome, an island, and a square world border."
+}
