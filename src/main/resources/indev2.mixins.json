@@ -3,7 +3,11 @@
   "package": "indev2.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "MinecraftServerMixin"
+    "MinecraftServerMixin",
+    "PortalShapeMixin",
+    "NetherPortalBlockMixin",
+    "WorldDimensionsMixin",
+    "ServerLevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

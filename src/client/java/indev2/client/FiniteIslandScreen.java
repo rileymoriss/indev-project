@@ -6,7 +6,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.CreateBuffetWorldScreen;
+import net.minecraft.client.gui.components.CycleButton;
+import indev2.portal.BiomeDestination;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationContext;
 import net.minecraft.core.Holder;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 public final class FiniteIslandScreen extends Screen {
     private final CreateWorldScreen parent;
     private Holder<Biome> biome;
+    private boolean island;
     private String radiusText;
     private String marginText;
     private EditBox radiusBox;
@@ -31,26 +33,31 @@ public final class FiniteIslandScreen extends Screen {
         this.parent = parent;
         FiniteIslandGenerator generator = (FiniteIslandGenerator) context.selectedDimensions().overworld();
         biome = generator.biome();
+        island = generator.island();
         radiusText = Integer.toString(generator.radius());
         marginText = Integer.toString(generator.oceanMargin());
     }
 
     @Override protected void init() {
         int left = width / 2 - 150;
-        int top = height / 2 - 75;
-        addRenderableWidget(Button.builder(Component.translatable("indev2.island.biome", biomeName()), button -> {
-            WorldCreationContext context = parent.getUiState().getSettings().withDimensions((registries, dimensions) ->
-                    dimensions.replaceOverworldGenerator(registries, new FiniteIslandGenerator(biome,
-                            registries.lookupOrThrow(Registries.NOISE_SETTINGS).getOrThrow(NoiseGeneratorSettings.OVERWORLD),
-                            IslandShape.DEFAULT_RADIUS, IslandShape.DEFAULT_MARGIN, registries.lookupOrThrow(Registries.NOISE))));
-            minecraft.setScreen(new CreateBuffetWorldScreen(this, context, chosen -> biome = chosen));
-        }).bounds(left, top, 300, 20).build());
-        radiusBox = addRenderableWidget(new EditBox(font, left + 170, top + 34, 130, 20,
+        int top = height / 2 - 90;
+        BiomeDestination selected = BiomeDestination.forBiome(biome).orElse(BiomeDestination.FOREST);
+        biome = parent.getUiState().getSettings().worldgenLoadContext().lookupOrThrow(Registries.BIOME).getOrThrow(selected.biome());
+        addRenderableWidget(CycleButton.<BiomeDestination>builder(
+                destination -> Component.translatable("indev2.destination." + destination.id()), selected)
+                .withValues(BiomeDestination.values())
+                .create(left, top, 300, 20, Component.translatable("indev2.island.biome.label"), (button, destination) -> {
+                    biome = parent.getUiState().getSettings().worldgenLoadContext().lookupOrThrow(Registries.BIOME).getOrThrow(destination.biome());
+                }));
+        addRenderableWidget(CycleButton.onOffBuilder(island)
+                .create(left, top + 26, 300, 20, Component.translatable("indev2.island.enabled"),
+                        (button, value) -> island = value));
+        radiusBox = addRenderableWidget(new EditBox(font, left + 170, top + 60, 130, 20,
                 Component.translatable("indev2.island.radius")));
         radiusBox.setMaxLength(5);
         radiusBox.setValue(radiusText);
         radiusBox.setResponder(value -> { radiusText = value; validate(); });
-        marginBox = addRenderableWidget(new EditBox(font, left + 170, top + 68, 130, 20,
+        marginBox = addRenderableWidget(new EditBox(font, left + 170, top + 94, 130, 20,
                 Component.translatable("indev2.island.margin")));
         marginBox.setMaxLength(5);
         marginBox.setValue(marginText);
@@ -61,17 +68,12 @@ public final class FiniteIslandScreen extends Screen {
             parent.getUiState().updateDimensions((registries, dimensions) ->
                     dimensions.replaceOverworldGenerator(registries, new FiniteIslandGenerator(biome,
                             registries.lookupOrThrow(Registries.NOISE_SETTINGS).getOrThrow(NoiseGeneratorSettings.OVERWORLD),
-                            radius, margin, registries.lookupOrThrow(Registries.NOISE))));
+                            radius, margin, 0L, island, true, registries.lookupOrThrow(Registries.NOISE))));
             onClose();
-        }).bounds(left, top + 150, 146, 20).build());
+        }).bounds(left, top + 176, 146, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, button -> onClose())
-                .bounds(left + 154, top + 150, 146, 20).build());
+                .bounds(left + 154, top + 176, 146, 20).build());
         validate();
-    }
-
-    private Component biomeName() {
-        return biome.unwrapKey().map(key -> Component.translatable(key.identifier().toLanguageKey("biome")))
-                .orElse(Component.literal("Custom biome"));
     }
 
     private void validate() {
@@ -94,13 +96,13 @@ public final class FiniteIslandScreen extends Screen {
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
         int left = width / 2 - 150;
-        int top = height / 2 - 75;
-        graphics.centeredText(font, title, width / 2, top - 28, 0xffffffff);
-        graphics.text(font, Component.translatable("indev2.island.radius"), left, top + 39, 0xffffffff);
-        graphics.text(font, Component.translatable("indev2.island.radius.range"), left, top + 51, 0xffa0a0a0);
-        graphics.text(font, Component.translatable("indev2.island.margin"), left, top + 73, 0xffffffff);
-        graphics.text(font, Component.translatable("indev2.island.margin.range"), left, top + 85, 0xffa0a0a0);
-        graphics.centeredText(font, status, width / 2, top + 108, doneButton.active ? 0xffa0e0a0 : 0xffff8080);
-        graphics.centeredText(font, Component.translatable("indev2.island.description"), width / 2, top + 126, 0xffa0a0a0);
+        int top = height / 2 - 90;
+        graphics.centeredText(font, title, width / 2, top - 22, 0xffffffff);
+        graphics.text(font, Component.translatable(island ? "indev2.island.radius" : "indev2.world.radius"), left, top + 65, 0xffffffff);
+        graphics.text(font, Component.translatable("indev2.island.radius.range"), left, top + 77, 0xffa0a0a0);
+        graphics.text(font, Component.translatable(island ? "indev2.island.margin" : "indev2.world.margin"), left, top + 99, 0xffffffff);
+        graphics.text(font, Component.translatable("indev2.island.margin.range"), left, top + 111, 0xffa0a0a0);
+        graphics.centeredText(font, status, width / 2, top + 134, doneButton.active ? 0xffa0e0a0 : 0xffff8080);
+        graphics.centeredText(font, Component.translatable(island ? "indev2.island.description" : "indev2.world.description"), width / 2, top + 152, 0xffa0a0a0);
     }
 }

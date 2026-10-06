@@ -4,6 +4,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import indev2.world.FiniteIslandGenerator;
 import indev2.world.IslandDensity;
+import indev2.portal.BiomePortals;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -18,6 +19,7 @@ public class Indev2Mod implements ModInitializer {
     public void onInitialize() {
         Registry.register(BuiltInRegistries.CHUNK_GENERATOR, Identifier.fromNamespaceAndPath(MOD_ID, "finite_island"), FiniteIslandGenerator.CODEC);
         Registry.register(BuiltInRegistries.DENSITY_FUNCTION_TYPE, Identifier.fromNamespaceAndPath(MOD_ID, "island_density"), IslandDensity.CODEC.codec());
+        BiomePortals.register();
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             for (var level : server.getAllLevels()) {
                 if (level.getChunkSource().getGenerator() instanceof FiniteIslandGenerator island) {

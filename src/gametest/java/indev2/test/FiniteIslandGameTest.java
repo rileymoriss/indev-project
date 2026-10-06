@@ -46,11 +46,14 @@ public final class FiniteIslandGameTest implements FabricClientGameTest {
             check(done.active, "Valid size rejected");
         });
         context.takeScreenshot("finite-island-menu");
+        context.clickScreenButton("indev2.island.enabled");
+        context.takeScreenshot("finite-world-vanilla-menu");
         context.clickScreenButton("gui.done");
         context.runOnClient(client -> {
             var state = ((CreateWorldScreen) client.screen).getUiState();
             var generator = (FiniteIslandGenerator) state.getSettings().selectedDimensions().overworld();
             check(generator.radius() == 192 && generator.oceanMargin() == 64, "Menu sizes not applied");
+            check(!generator.island(), "Menu toggle not applied");
         });
         context.setScreen(TitleScreen::new);
 
@@ -112,6 +115,48 @@ public final class FiniteIslandGameTest implements FabricClientGameTest {
                 check(level.getWorldBorder().getSize() == 512, "Border lost on reload");
                 check(level.getBlockState(new BlockPos(0, 150, 0)).is(Blocks.GOLD_BLOCK), "Player changes lost on reload");
                 check(level.getHeight(Heightmap.Types.OCEAN_FLOOR, -240, -240) < generator.getSeaLevel(), "New chunks lose island shape after reload");
+            });
+        }
+        TestWorldSave vanillaSave;
+        try (var world = context.worldBuilder().adjustSettings(state -> {
+            state.setSeed("12345");
+            state.updateDimensions((registries, dimensions) -> dimensions.replaceOverworldGenerator(registries,
+                    new FiniteIslandGenerator(registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.FOREST),
+                            registries.lookupOrThrow(Registries.NOISE_SETTINGS).getOrThrow(NoiseGeneratorSettings.OVERWORLD),
+                            192, 64, 0L, false, registries.lookupOrThrow(Registries.NOISE))));
+        }).create()) {
+            vanillaSave = world.getWorldSave();
+            world.getServer().runOnServer(server -> {
+                var level = server.overworld();
+                var registries = server.registryAccess();
+                var settings = registries.lookupOrThrow(Registries.NOISE_SETTINGS).getOrThrow(NoiseGeneratorSettings.OVERWORLD);
+                var vanilla = new net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator(
+                        new net.minecraft.world.level.biome.FixedBiomeSource(registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.FOREST)), settings);
+                var random = net.minecraft.world.level.levelgen.RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), 12345L);
+                var generator = (FiniteIslandGenerator) level.getChunkSource().getGenerator();
+                for (int[] point : new int[][]{{0, 0}, {240, 0}, {-240, -240}, {1000, 1000}}) {
+                    var actual = generator.getBaseColumn(point[0], point[1], level, random);
+                    var expected = vanilla.getBaseColumn(point[0], point[1], level, random);
+                    for (int y = level.getMinY(); y < level.getMaxY(); y++) {
+                        check(actual.getBlock(y).equals(expected.getBlock(y)), "Vanilla terrain altered with island off");
+                    }
+                }
+                for (var subworld : server.getAllLevels()) {
+                    if (subworld.getChunkSource().getGenerator() instanceof FiniteIslandGenerator finite) {
+                        check(!finite.island(), "Subworld ignored terrain toggle");
+                        check(subworld.getWorldBorder().getSize() == 512, "Subworld size differs");
+                    }
+                }
+            });
+        }
+        try (var reopened = vanillaSave.open()) {
+            reopened.getServer().runOnServer(server -> {
+                for (var level : server.getAllLevels()) {
+                    if (level.getChunkSource().getGenerator() instanceof FiniteIslandGenerator finite) {
+                        check(!finite.island(), "Terrain toggle lost on reload");
+                        check(level.getWorldBorder().getSize() == 512, "Vanilla terrain border lost on reload");
+                    }
+                }
             });
         }
         // The preset must remain opt-in: ordinary worlds keep their vanilla generator and border.

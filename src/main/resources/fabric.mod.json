@@ -13,6 +13,9 @@
   "entrypoints": {
     "main": [
       "indev2.Indev2Mod"
+    ],
+    "client": [
+      "indev2.client.Indev2Client"
     ]
   },
   "depends": {

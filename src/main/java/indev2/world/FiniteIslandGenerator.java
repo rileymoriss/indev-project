@@ -25,18 +25,39 @@ public final class FiniteIslandGenerator extends ChunkGenerator {
             NoiseGeneratorSettings.CODEC.fieldOf("settings").forGetter(g -> g.settings),
             Codec.intRange(IslandShape.MIN_RADIUS, IslandShape.MAX_RADIUS).fieldOf("radius").forGetter(FiniteIslandGenerator::radius),
             Codec.intRange(IslandShape.MIN_MARGIN, IslandShape.MAX_MARGIN).fieldOf("ocean_margin").forGetter(FiniteIslandGenerator::oceanMargin),
+            Codec.LONG.optionalFieldOf("seed_salt", 0L).forGetter(g -> g.seedSalt),
+            Codec.BOOL.optionalFieldOf("island", true).forGetter(FiniteIslandGenerator::island),
+            Codec.BOOL.optionalFieldOf("random_variant", false).forGetter(g -> g.randomVariant),
             RegistryOps.<NormalNoise.NoiseParameters, FiniteIslandGenerator>retrieveGetter(Registries.NOISE)
     ).apply(i, FiniteIslandGenerator::new));
 
-    private final Holder<Biome> biome;
+    private Holder<Biome> biome;
+    private boolean randomVariant;
     private final Holder<NoiseGeneratorSettings> settings;
     private final int radius;
     private final int oceanMargin;
     private final HolderGetter<NormalNoise.NoiseParameters> noises;
+    private final long seedSalt;
+    private final boolean island;
     private volatile Runtime runtime;
 
     public FiniteIslandGenerator(Holder<Biome> biome, Holder<NoiseGeneratorSettings> settings,
                                  int radius, int oceanMargin, HolderGetter<NormalNoise.NoiseParameters> noises) {
+        this(biome, settings, radius, oceanMargin, 0L, noises);
+    }
+
+    public FiniteIslandGenerator(Holder<Biome> biome, Holder<NoiseGeneratorSettings> settings,
+                                 int radius, int oceanMargin, long seedSalt, HolderGetter<NormalNoise.NoiseParameters> noises) {
+        this(biome, settings, radius, oceanMargin, seedSalt, true, noises);
+    }
+
+    public FiniteIslandGenerator(Holder<Biome> biome, Holder<NoiseGeneratorSettings> settings,
+                                 int radius, int oceanMargin, long seedSalt, boolean island, HolderGetter<NormalNoise.NoiseParameters> noises) {
+        this(biome, settings, radius, oceanMargin, seedSalt, island, false, noises);
+    }
+
+    public FiniteIslandGenerator(Holder<Biome> biome, Holder<NoiseGeneratorSettings> settings,
+                                 int radius, int oceanMargin, long seedSalt, boolean island, boolean randomVariant, HolderGetter<NormalNoise.NoiseParameters> noises) {
         super(new FixedBiomeSource(biome));
         if (radius < IslandShape.MIN_RADIUS || radius > IslandShape.MAX_RADIUS
                 || oceanMargin < IslandShape.MIN_MARGIN || oceanMargin > IslandShape.MAX_MARGIN) {
@@ -47,9 +68,13 @@ public final class FiniteIslandGenerator extends ChunkGenerator {
         this.radius = radius;
         this.oceanMargin = oceanMargin;
         this.noises = noises;
+        this.seedSalt = seedSalt;
+        this.island = island;
+        this.randomVariant = randomVariant;
     }
 
     public Holder<Biome> biome() { return biome; }
+    public boolean island() { return island; }
     public int radius() { return radius; }
     public int oceanMargin() { return oceanMargin; }
     public int worldWidth() { return IslandShape.worldWidth(radius, oceanMargin); }
@@ -66,8 +91,27 @@ public final class FiniteIslandGenerator extends ChunkGenerator {
         return current;
     }
 
+    public FiniteIslandGenerator resized(int radius, int margin) {
+        return resized(radius, margin, island);
+    }
+
+    public FiniteIslandGenerator resized(int radius, int margin, boolean island) {
+        return new FiniteIslandGenerator(biome, settings, radius, margin, seedSalt, island, randomVariant, noises);
+    }
+
+    /** Resolve before ServerLevel constructs its chunk source; serialize the selected biome in the original stem too. */
+    public FiniteIslandGenerator resolveVariant(long seed, HolderLookup.Provider registries) {
+        if (!randomVariant) return this;
+        var family = indev2.portal.BiomeDestination.forBiome(biome).orElseThrow();
+        biome = registries.lookupOrThrow(Registries.BIOME).getOrThrow(family.selectBiome(seed));
+        randomVariant = false;
+        return new FiniteIslandGenerator(biome, settings, radius, oceanMargin, seedSalt, island, noises);
+    }
+
     private Runtime createRuntime(long seed) {
         NoiseGeneratorSettings original = settings.value();
+        if (!island) return new Runtime(new NoiseBasedChunkGenerator(biomeSource, settings),
+                RandomState.create(original, noises, seed));
         NoiseRouter n = original.noiseRouter();
         NoiseRouter island = new NoiseRouter(n.barrierNoise(), n.fluidLevelFloodednessNoise(),
                 n.fluidLevelSpreadNoise(), n.lavaNoise(), n.temperature(), n.vegetation(),
@@ -83,7 +127,7 @@ public final class FiniteIslandGenerator extends ChunkGenerator {
     }
 
     @Override public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> structures, RandomState ignored, long seed) {
-        runtime = createRuntime(seed);
+        runtime = createRuntime(seed ^ seedSalt);
         return super.createState(structures, runtime().state(), seed);
     }
     @Override protected MapCodec<? extends ChunkGenerator> codec() { return CODEC; }
@@ -97,7 +141,7 @@ public final class FiniteIslandGenerator extends ChunkGenerator {
         runtime().generator().buildSurface(region, structures, runtime().state(), chunk);
     }
     @Override public void applyCarvers(WorldGenRegion region, long seed, RandomState ignored, BiomeManager biomes, StructureManager structures, ChunkAccess chunk) {
-        runtime().generator().applyCarvers(region, seed, runtime().state(), biomes, structures, chunk);
+        runtime().generator().applyCarvers(region, seed ^ seedSalt, runtime().state(), biomes, structures, chunk);
     }
     @Override public void spawnOriginalMobs(WorldGenRegion region) { runtime().generator().spawnOriginalMobs(region); }
     @Override public int getGenDepth() { return settings.value().noiseSettings().height(); }
@@ -110,13 +154,13 @@ public final class FiniteIslandGenerator extends ChunkGenerator {
         return runtime().generator().getBaseColumn(x, z, height, runtime().state());
     }
     @Override public void addDebugScreenInfo(List<String> lines, RandomState ignored, BlockPos pos) {
-        lines.add("Finite island: radius " + radius + ", ocean margin " + oceanMargin);
+        lines.add("Finite world: island " + island + ", border width " + worldWidth());
         runtime().generator().addDebugScreenInfo(lines, runtime().state(), pos);
     }
     @Override public void createStructures(RegistryAccess registries, ChunkGeneratorStructureState state, StructureManager structures,
             ChunkAccess chunk, StructureTemplateManager templates, ResourceKey<Level> dimension) {
         // Land structures must not start in the surrounding ocean or straddle the coast.
-        if (Math.hypot(chunk.getPos().getMiddleBlockX(), chunk.getPos().getMiddleBlockZ()) < radius * 0.72) {
+        if (!island || Math.hypot(chunk.getPos().getMiddleBlockX(), chunk.getPos().getMiddleBlockZ()) < radius * 0.72) {
             super.createStructures(registries, state, structures, chunk, templates, dimension);
         }
     }
