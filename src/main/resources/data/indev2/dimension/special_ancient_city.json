@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "type": "indev2:finite_island",
+    "biome": "minecraft:deep_dark",
+    "settings": "minecraft:overworld",
+    "radius": 128,
+    "ocean_margin": 32,
+    "seed_salt": 1115771116253,
+    "island": false,
+    "structure_destination": "ancient_city"
+  }
+}

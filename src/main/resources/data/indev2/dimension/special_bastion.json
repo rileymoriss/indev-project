@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:the_nether",
+  "generator": {
+    "type": "indev2:finite_island",
+    "biome": "minecraft:crimson_forest",
+    "settings": "minecraft:nether",
+    "radius": 128,
+    "ocean_margin": 32,
+    "seed_salt": 1611363066417,
+    "island": false,
+    "structure_destination": "bastion"
+  }
+}

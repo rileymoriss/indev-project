@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "type": "indev2:finite_island",
+    "biome": "minecraft:dark_forest",
+    "settings": "minecraft:overworld",
+    "radius": 128,
+    "ocean_margin": 32,
+    "seed_salt": 1363567091335,
+    "island": false,
+    "structure_destination": "mansion"
+  }
+}

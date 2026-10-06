@@ -30,6 +30,14 @@ public abstract class WorldDimensionsMixin {
             for (var candidate : BiomeDestination.values()) {
                 if (entry.getKey().identifier().equals(candidate.dimensionId())) destination = candidate;
             }
+            indev2.portal.StructureDestination special = null;
+            for (var candidate : indev2.portal.StructureDestination.values()) {
+                if (entry.getKey().identifier().equals(candidate.dimensionId())) special = candidate;
+            }
+            if (special != null && homeDestination.isEmpty()) continue;
+            if (special != null && stem.generator() instanceof FiniteIslandGenerator island) {
+                stem = new LevelStem(stem.type(), island.resized(home.radius(), home.oceanMargin(), false));
+            }
             // The Overworld already is this biome's destination; do not create a duplicate island.
             if (destination != null && (homeDestination.isEmpty() || destination == homeDestination.get())) continue;
             if (destination != null && stem.generator() instanceof FiniteIslandGenerator island) {

@@ -17,15 +17,15 @@ import net.minecraft.world.level.portal.TeleportTransition;
 
 /** The block variant stores its destination durably in normal chunk block data. */
 public final class DyedPortalBlock extends NetherPortalBlock {
-    private final BiomeDestination destination;
+    private final PortalDestination destination;
     private final MapCodec<NetherPortalBlock> codec;
 
-    public DyedPortalBlock(BiomeDestination destination, BlockBehaviour.Properties properties) {
+    public DyedPortalBlock(PortalDestination destination, BlockBehaviour.Properties properties) {
         super(properties);
         this.destination = destination;
         codec = simpleCodec(props -> new DyedPortalBlock(destination, props));
     }
-    public BiomeDestination destination() { return destination; }
+    public PortalDestination destination() { return destination; }
     @Override public MapCodec<NetherPortalBlock> codec() { return codec; }
     @Override protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {}
     @Override protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity,

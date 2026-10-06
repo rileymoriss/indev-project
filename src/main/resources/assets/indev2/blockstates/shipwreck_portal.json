@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "indev2:block/dyed_portal_ns"
+    },
+    "axis=z": {
+      "model": "indev2:block/dyed_portal_ew"
+    }
+  }
+}

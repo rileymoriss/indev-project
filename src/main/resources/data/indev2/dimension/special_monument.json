@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "type": "indev2:finite_island",
+    "biome": "minecraft:deep_ocean",
+    "settings": "minecraft:overworld",
+    "radius": 128,
+    "ocean_margin": 32,
+    "seed_salt": 991873128712,
+    "island": false,
+    "structure_destination": "monument"
+  }
+}

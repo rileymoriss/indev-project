@@ -39,7 +39,7 @@ public record PortalArea(PortalRef ref, List<BlockPos> blocks) {
         int minZ = blocks.stream().mapToInt(BlockPos::getZ).min().orElseThrow();
         return new PortalArea(new PortalRef(level.dimension().identifier(), new BlockPos(minX, minY, minZ), axis), List.copyOf(blocks));
     }
-    public void recolor(ServerLevel level, DyedPortalBlock block) {
+    public void recolor(ServerLevel level, Block block) {
         BlockState state = block.defaultBlockState().setValue(NetherPortalBlock.AXIS, ref.axis());
         // Apply the whole interior before neighbour validation, avoiding a partial portal collapse.
         for (BlockPos pos : blocks) level.setBlock(pos, state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);

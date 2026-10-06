@@ -47,5 +47,21 @@
   "indev2.destination.pale_garden": "Pale Garden",
   "block.indev2.pale_garden_portal": "Pale Garden Portal",
   "indev2.destination.countryside": "Countryside",
-  "block.indev2.countryside_portal": "Countryside Portal"
+  "block.indev2.countryside_portal": "Countryside Portal",
+  "block.indev2.monument_portal": "Monument Portal",
+  "block.indev2.ancient_city_portal": "Ancient City Portal",
+  "block.indev2.end_city_portal": "End City Portal",
+  "block.indev2.mansion_portal": "Mansion Portal",
+  "block.indev2.trial_chambers_portal": "Trial Chambers Portal",
+  "block.indev2.bastion_portal": "Bastion Portal",
+  "block.indev2.village_portal": "Village Portal",
+  "block.indev2.desert_temple_portal": "Desert Temple Portal",
+  "block.indev2.jungle_temple_portal": "Jungle Temple Portal",
+  "block.indev2.witch_hut_portal": "Witch Hut Portal",
+  "block.indev2.igloo_portal": "Igloo Portal",
+  "block.indev2.outpost_portal": "Outpost Portal",
+  "block.indev2.trail_ruins_portal": "Trail Ruins Portal",
+  "block.indev2.shipwreck_portal": "Shipwreck Portal",
+  "block.indev2.coral_reef_portal": "Coral Reef Portal",
+  "indev2.portal.structure_unavailable": "The destination structure could not be prepared. Your portal remains in the source world."
 }

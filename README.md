@@ -4,7 +4,7 @@ A Fabric mod intended to bring ideas from the Legacy+ team's Indev+ mod to moder
 
 ## Current status
 
-Finite Island world generation is implemented: one biome, a seeded irregular island, surrounding ocean, and a square vanilla world border. Island shaping can be toggled off to use vanilla terrain inside the same border. Size, terrain mode, and biome are selected during world creation and retained in the save. All 16 dyes connect persistent biome-family worlds, with a seeded biome variant selected once for each grouped destination. Structure/item destinations remain planned.
+Finite Island world generation is implemented: one biome, a seeded irregular island, surrounding ocean, and a square vanilla world border. Island shaping can be toggled off to use vanilla terrain inside the same border. Size, terrain mode, and biome are selected during world creation and retained in the save. All 16 dyes connect persistent biome-family worlds, with a seeded biome variant selected once for each grouped destination. Special item portals are also implemented, with persistent themed worlds and guaranteed native structures.
 
 ## Creating a finite world
 
@@ -15,7 +15,7 @@ Finite Island world generation is implemented: one biome, a seeded irregular isl
 
 Defaults are the forest family, a 128-block radius, and a 32-block ocean margin (a 320-block-wide border). Supported radii are 128–8,192 blocks; ocean margins are 32–4,096 blocks. The radius is an outer terrain envelope, so the irregular coastline can fall inside it.
 
-With Island terrain On, terrain uses Minecraft's Overworld noise pipeline with an island envelope, retaining vanilla caves, ores, biome surfaces, vegetation, and mob generation. Structures can start only in the island's interior. The surrounding water retains the selected biome, so the entire Overworld has one biome. The vanilla Nether and End keep their standard generation and borders for now. The creation menu offers all 16 biome families in the dye palette below. The chosen family selects a biome variant when the world is created. Ordinary world types are unaffected. No additional terrain mod is required; compatibility with third-party terrain mods has not been verified.
+With Island terrain On, terrain uses Minecraft's Overworld noise pipeline with an island envelope, retaining vanilla caves, ores, biome surfaces, vegetation, and mob generation. Structures can start only in the island's interior. The surrounding water retains the selected biome, so the entire Overworld has one biome. Undyed portals in finite worlds lead to a separate finite Nether with a guaranteed fortress. The original vanilla Nether and End dimensions remain available and retain their existing terrain and builds. The creation menu offers all 16 biome families in the dye palette below. The chosen family selects a biome variant when the world is created. Ordinary world types are unaffected. No additional terrain mod is required; compatibility with third-party terrain mods has not been verified.
 
 ## Dyed biome portals
 
@@ -23,7 +23,7 @@ With Island terrain On, terrain uses Minecraft's Overworld noise pipeline with a
 2. Physically throw a dye into the active portal to select its biome family (see the full palette below).
 3. The whole portal changes colour. Enter it to travel using the normal portal delay and cooldown.
 
-One dye is consumed when the colour changes. The remainder of a thrown stack stays in the source world; matching dye does not consume another item. Undyed portals retain their normal Nether behaviour. This feature applies to finite worlds whose starting biome belongs to the palette; ordinary worlds are unaffected.
+One dye is consumed when the colour changes. The remainder of a thrown stack stays in the source world; matching dye does not consume another item. Undyed portals in finite worlds lead to the finite Nether fortress destination; undyed portals there return to the starting world. This feature applies to finite worlds whose starting biome belongs to the palette; ordinary worlds are unaffected.
 
 Your starting world is its biome family's destination: green leads home when you start in forest, and yellow leads home when you start in desert. A portal targeting the biome you are already in does not move you. Each other family has one persistent dimension, with a distinct terrain seed derived from the world seed. All biome worlds use the starting world's radius, ocean margin, and terrain toggle, including after reopening the save.
 
@@ -37,6 +37,7 @@ Older finite saves whose starting biome belongs to the palette gain the missing 
 - `IslandShape` uses distance from `(0, 0)` and seeded waves to define an irregular coastline with a smooth shore transition.
 - `IslandDensity` adjusts vanilla terrain density and surface-height estimates: it ensures central land and lowers terrain into ocean outside the island.
 - `FiniteIslandGenerator` uses a fixed biome source and delegates terrain, surfaces, caves, and mob generation to Minecraft's noise generator. Its codec stores the biome, radius, ocean margin, island toggle, and noise settings in the save; the world seed determines generation.
+- `PortalDestination` unifies biome and structure travel. `StructureDestination` declares activation items and profiles; `GuaranteedStructures` selects native structure layouts that fit within the border, including the required End ship and igloo basement. The generator codec’s optional `structure_destination` field preserves compatibility with existing biome generators.
 - `ServerLevelMixin` resolves grouped biome choices before chunk generation. The server saves all resolved destination generators, including datapack dimensions, so their concrete biomes survive future palette changes.
 - A server mixin starts vanilla's spawn search at the bounded world's centre. On server startup, the mod applies a centred border with width `2 × (radius + ocean margin)`.
 
@@ -58,7 +59,7 @@ Built JARs are written to `build/libs/`.
 Java source belongs in `src/main/java`; client-only code belongs in `src/client/java`.
 Resources belong in the corresponding `resources` directories.
 
-Run the isolated Minecraft integration tests with `./gradlew runClientGameTest`. This launches a test client, checks the menu toggle and validation, compares disabled island shaping against vanilla terrain, generates island terrain, verifies the border, saves and reopens a world, and checks ordinary world types. Portal tests cover every dye, all-family travel and return, seeded variant selection and persistence, thrown dye stacks, recolouring, both starting biomes, travel and return, independent entrance links, broken arrival portals, and save/reload persistence. Test saves and screenshots are placed under `build/run/clientGameTest/`; the test mod is excluded from the release JAR.
+Run the isolated Minecraft integration tests with `./gradlew runClientGameTest`. This launches a test client, checks the menu toggle and validation, compares disabled island shaping against vanilla terrain, generates island terrain, verifies the border, saves and reopens a world, and checks ordinary world types. Portal tests cover every dye, all-family travel and return, seeded variant selection and persistence, thrown dye stacks, recolouring, both starting biomes, travel and return, independent entrance links, broken arrival portals, and save/reload persistence. Structure tests cover every special item and the default fortress, structure bounds, native loot, elder guardians, trial spawners, ship elytra, the igloo basement, coral, return travel, below-roof Nether arrivals, and save/reload persistence. Test saves and screenshots are placed under `build/run/clientGameTest/`; the test mod is excluded from the release JAR.
 
 ## Agreed design
 
@@ -106,9 +107,9 @@ For grouped destinations, randomly select one biome when the destination is firs
 
 Cave biomes have no dedicated dye destinations; use whatever underground generation occurs beneath each world. Beaches, shores, rivers, and ordinary ocean biomes have no dedicated dye destinations. Nether and End destinations remain separate from this palette.
 
-### Planned item destinations
+### Special structure portals
 
-Throw these items into a lit, undyed Nether portal to select a special persistent destination world. These destinations are planned, not yet implemented.
+Throw these items into a lit, undyed Nether portal to select a special persistent destination world. All destinations below are implemented. One activation item is consumed when the portal changes; remaining items are ejected and matching items are not consumed. Special items select an undyed portal; break and relight a coloured portal to reset it. Dyes can also recolour special portals.
 
 | Activation item | Destination | Required generation |
 |---|---|---|
@@ -128,17 +129,21 @@ Throw these items into a lit, undyed Nether portal to select a special persisten
 | Barrel | Shipwreck and ocean ruins world | Ocean with guaranteed shipwreck and ocean ruins, separate from the monument world |
 | Sea Pickle | Coral reef world | Warm, shallow ocean with a guaranteed coral reef |
 
-These are dedicated worlds within the same save, not searches for structures in an existing biome destination. Each retains builds and changes between visits and shares the configured world size. The ocean monument world uses ocean terrain regardless of the island toggle. Arrival portals must provide a safe landing and a linked return route; ancient city terrain and special portal appearance remain to be designed.
+These are dedicated worlds within the same save, not searches for structures in an existing biome destination. Each retains builds and changes between visits and shares the configured world size. Special worlds inherit the starting world’s border size but use their own terrain profiles regardless of the island toggle. Portals have distinct tints, safe landing pads near the perimeter where terrain allows, and persistent linked return routes.
+
+Special worlds use normal Minecraft noise terrain, caves, aquifers, surfaces, and biome features for their Overworld, Nether, or End settings, without flattening or an island envelope. Destinations select deterministic terrain seeds with suitable natural land or ocean around their guaranteed surface feature. The End city destination samples naturally generated outer-island terrain centred within the border, rather than the central End island. Underground structures use normal underground generation. Arrival portals find safe terrain, including below-roof Nether landings. Already generated chunks retain their existing terrain; use a fresh save to see the change throughout a destination.
+
+Structures are generated through Minecraft’s native structure pipeline, retaining loot, spawners, mobs, and structure references. The End city includes a ship with elytra, and the igloo includes a basement. The guaranteed structures generate even when the ordinary **Generate Structures** option is disabled. First entry prepares the whole structure footprint and can briefly pause while chunks generate. Reopening or revisiting preserves existing chunks, builds, and destroyed structures rather than restoring them.
 
 Each promised structure must fit wholly inside the world border. Activation items should be obtainable before visiting their destination; do not require destination-exclusive loot to unlock that world. Terrain for special destinations should support the promised structure or biome feature, rather than forcing the ordinary island envelope where it would conflict.
 
-The planned undyed portal destination remains the Nether, with a guaranteed Nether fortress. This guarantee is not yet implemented. The purple Pale Garden portal uses pale lavender colouring, white particles, and the mod's neutral animated portal texture to distinguish it from the ordinary purple Nether portal.
+An undyed portal leads to a dedicated finite Nether with a guaranteed fortress. Its ordinary portals return home. The Eye of Ender destination has End lighting and terrain without a dragon fight; the original vanilla End retains its dragon fight. The purple Pale Garden portal uses pale lavender colouring, white particles, and the mod's neutral animated portal texture to distinguish it from the ordinary purple Nether portal.
 
 ### First milestone and open decisions
 
 - Implemented first milestone: one playable, single-biome finite island with configurable size and a working world border.
 - Implemented world creation interface: a selectable Finite Island option with a biome choice, island radius, and ocean margin.
-- Terrain shaping and default sizes can be refined through playtesting. The full dye palette and structure activation items above are agreed; future adjustments to variant weights, special destination terrain details, and the future role of the vanilla Nether and End remain to be decided.
+- Terrain shaping and default sizes can be refined through playtesting. The full dye palette and structure activation items above are agreed; future adjustments to variant weights and special destination terrain details remain open to playtesting.
 - Larion's disc world mod remains a possible reference for future refinements; the current implementation uses vanilla terrain generation without an additional dependency.
 
 ### Terrain toggle

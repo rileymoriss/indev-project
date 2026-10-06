@@ -1,0 +1,13 @@
+{
+  "type": "indev2:end_city",
+  "generator": {
+    "type": "indev2:finite_island",
+    "biome": "minecraft:end_highlands",
+    "settings": "minecraft:end",
+    "radius": 128,
+    "ocean_margin": 32,
+    "seed_salt": 1239669103794,
+    "island": false,
+    "structure_destination": "end_city"
+  }
+}

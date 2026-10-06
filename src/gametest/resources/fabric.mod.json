@@ -5,6 +5,7 @@
   "environment": "client",
   "entrypoints": {
     "fabric-client-gametest": [
+      "indev2.test.StructurePortalGameTest",
       "indev2.test.FullPaletteGameTest",
       "indev2.test.BiomePortalGameTest",
       "indev2.test.FiniteIslandGameTest"

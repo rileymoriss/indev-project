@@ -1,6 +1,5 @@
 package indev2.portal;
 
-import java.util.EnumMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,10 +28,11 @@ import net.minecraft.world.phys.Vec3;
 import indev2.world.FiniteIslandGenerator;
 
 public final class BiomePortals {
-    private static final Map<BiomeDestination, DyedPortalBlock> BLOCKS = new EnumMap<>(BiomeDestination.class);
+    private static final Map<PortalDestination, Block> BLOCKS = new java.util.HashMap<>();
     private BiomePortals() {}
     public static void register() {
-        for (var destination : BiomeDestination.values()) {
+        for (var destination : PortalDestination.all().toList()) {
+            if (destination == StructureDestination.FORTRESS) { BLOCKS.put(destination, Blocks.NETHER_PORTAL); continue; }
             Identifier id = Identifier.fromNamespaceAndPath("indev2", destination.id() + "_portal");
             var key = ResourceKey.create(Registries.BLOCK, id);
             DyedPortalBlock block = new DyedPortalBlock(destination,
@@ -40,17 +40,20 @@ public final class BiomePortals {
             BLOCKS.put(destination, Registry.register(BuiltInRegistries.BLOCK, key, block));
         }
     }
-    public static DyedPortalBlock block(BiomeDestination destination) { return BLOCKS.get(destination); }
+    public static NetherPortalBlock block(PortalDestination destination) { return (NetherPortalBlock) BLOCKS.get(destination); }
 
-    /** Return true to intercept a supported dye item instead of sending it through a portal. */
+    /** Intercept a dye or special activation item instead of sending it through the portal. */
     public static boolean handleDye(ServerLevel level, BlockPos pos, Entity entity) {
-        if (!(entity instanceof ItemEntity item) || BiomeDestination.forLevel(level).isEmpty()) return false;
-        var destination = BiomeDestination.forDye(item.getItem());
+        if (!(entity instanceof ItemEntity item) || PortalDestination.forLevel(level).isEmpty()) return false;
+        java.util.Optional<PortalDestination> destination = BiomeDestination.forDye(item.getItem()).map(value -> value);
+        if (destination.isEmpty()) destination = StructureDestination.forItem(item.getItem()).map(value -> value);
         if (destination.isEmpty()) return false;
         if (item.getPortalCooldown() > 0) return true;
         PortalArea area = PortalArea.find(level, pos);
         if (area == null) return true;
-        DyedPortalBlock color = block(destination.get());
+        Block color = block(destination.get());
+        if (destination.get() instanceof StructureDestination && !area.blocks().stream().allMatch(part -> level.getBlockState(part).is(Blocks.NETHER_PORTAL))
+                && !area.blocks().stream().allMatch(part -> level.getBlockState(part).is(color))) return false;
         if (area.blocks().stream().allMatch(part -> level.getBlockState(part).is(color))) {
             ejectDye(item, area);
             return true;
@@ -76,11 +79,15 @@ public final class BiomePortals {
         item.setDeltaMovement(Vec3.ZERO);
     }
 
-    public static TeleportTransition destination(ServerLevel source, Entity entity, BlockPos entry, BiomeDestination destination) {
-        var origin = BiomeDestination.forLevel(source);
+    public static TeleportTransition destination(ServerLevel source, Entity entity, BlockPos entry, PortalDestination destination) {
+        var origin = PortalDestination.forLevel(source);
         if (origin.isEmpty() || origin.get() == destination) return null;
         ServerLevel target = destination.level(source.getServer());
         if (target == null || !(target.getChunkSource().getGenerator() instanceof FiniteIslandGenerator)) return null;
+        if (destination instanceof StructureDestination special && !indev2.world.GuaranteedStructures.prepare(target, special)) {
+            if (entity instanceof ServerPlayer player) player.sendSystemMessage(Component.translatable("indev2.portal.structure_unavailable"));
+            return null;
+        }
         PortalArea sourceArea = PortalArea.find(source, entry);
         if (sourceArea == null) return null;
         PortalLinks links = PortalLinks.get(source.getServer());
@@ -108,7 +115,7 @@ public final class BiomePortals {
                 }));
     }
 
-    private static PortalArea validExit(ServerLevel target, PortalRef ref, BiomeDestination returnColor) {
+    private static PortalArea validExit(ServerLevel target, PortalRef ref, PortalDestination returnColor) {
         if (ref == null || !target.dimension().identifier().equals(ref.dimension())) return null;
         PortalArea area = PortalArea.find(target, ref.anchor());
         if (area == null || !area.ref().equals(ref)
@@ -140,8 +147,9 @@ public final class BiomePortals {
     }
 
     /** Builds a 2×3 portal and landing pad only where terrain is natural and clearance is replaceable. */
-    public static PortalRef createArrival(ServerLevel level, BlockPos approximate, Direction.Axis axis, BiomeDestination returnColor) {
+    public static PortalRef createArrival(ServerLevel level, BlockPos approximate, Direction.Axis axis, PortalDestination returnColor) {
         var generator = (FiniteIslandGenerator) level.getChunkSource().getGenerator();
+        if (generator.special() != null) return indev2.world.GuaranteedStructures.arrival(level, approximate, axis, block(returnColor));
         int limit = generator.island() ? (int) (generator.radius() * .6) : generator.worldWidth() / 2 - 4;
         int centerX = Math.clamp(approximate.getX(), -limit / 2, limit / 2);
         int centerZ = Math.clamp(approximate.getZ(), -limit / 2, limit / 2);

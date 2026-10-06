@@ -15,6 +15,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(NetherPortalBlock.class)
 public abstract class NetherPortalBlockMixin {
+    @Inject(method = "getPortalDestination", at = @At("HEAD"), cancellable = true)
+    private void indev2$finiteNether(ServerLevel level, Entity entity, BlockPos entry,
+            org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<net.minecraft.world.level.portal.TeleportTransition> callback) {
+        if (indev2.portal.PortalDestination.forLevel(level).isPresent()) {
+            indev2.portal.PortalDestination destination = indev2.portal.PortalDestination.forLevel(level).orElseThrow() == indev2.portal.StructureDestination.FORTRESS
+                    ? indev2.portal.BiomeDestination.forLevel(level.getServer().overworld()).orElseThrow()
+                    : indev2.portal.StructureDestination.FORTRESS;
+            callback.setReturnValue(BiomePortals.destination(level, entity, entry, destination));
+        }
+    }
     @Inject(method = "entityInside", at = @At("HEAD"), cancellable = true)
     private void indev2$thrownDye(BlockState state, Level level, BlockPos pos, Entity entity,
             InsideBlockEffectApplier effects, boolean precise, CallbackInfo callback) {

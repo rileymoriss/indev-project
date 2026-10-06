@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "type": "indev2:finite_island",
+    "biome": "minecraft:swamp",
+    "settings": "minecraft:overworld",
+    "radius": 128,
+    "ocean_margin": 32,
+    "seed_salt": 2106955016581,
+    "island": false,
+    "structure_destination": "witch_hut"
+  }
+}

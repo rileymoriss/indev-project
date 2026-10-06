@@ -9,8 +9,8 @@ import net.minecraft.client.color.block.BlockTintSources;
 
 public final class Indev2Client implements ClientModInitializer {
     @Override public void onInitializeClient() {
-        for (var destination : BiomeDestination.values()) {
-            BlockColorRegistry.register(List.of(BlockTintSources.constant(0xff000000 | destination.textureTint())),
+        for (var destination : indev2.portal.PortalDestination.all().filter(destination -> destination != indev2.portal.StructureDestination.FORTRESS).toList()) {
+            BlockColorRegistry.register(List.of(BlockTintSources.constant(0xff000000 | destination.color())),
                     BiomePortals.block(destination));
         }
     }

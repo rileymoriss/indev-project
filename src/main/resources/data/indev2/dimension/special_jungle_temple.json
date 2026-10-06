@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "type": "indev2:finite_island",
+    "biome": "minecraft:jungle",
+    "settings": "minecraft:overworld",
+    "radius": 128,
+    "ocean_margin": 32,
+    "seed_salt": 1983057029040,
+    "island": false,
+    "structure_destination": "jungle_temple"
+  }
+}

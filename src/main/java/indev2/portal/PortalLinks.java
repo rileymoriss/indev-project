@@ -39,10 +39,10 @@ public final class PortalLinks extends SavedData {
     public static PortalLinks get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(TYPE);
     }
-    public PortalRef find(PortalRef from, BiomeDestination destination) {
+    public PortalRef find(PortalRef from, PortalDestination destination) {
         return links.get(new Key(from, destination.id()));
     }
-    public void connect(PortalRef from, BiomeDestination destination, PortalRef to, BiomeDestination origin) {
+    public void connect(PortalRef from, PortalDestination destination, PortalRef to, PortalDestination origin) {
         links.put(new Key(from, destination.id()), to);
         links.put(new Key(to, origin.id()), from);
         setDirty();

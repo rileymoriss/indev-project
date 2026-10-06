@@ -19,6 +19,7 @@ public class Indev2Mod implements ModInitializer {
     public void onInitialize() {
         Registry.register(BuiltInRegistries.CHUNK_GENERATOR, Identifier.fromNamespaceAndPath(MOD_ID, "finite_island"), FiniteIslandGenerator.CODEC);
         Registry.register(BuiltInRegistries.DENSITY_FUNCTION_TYPE, Identifier.fromNamespaceAndPath(MOD_ID, "island_density"), IslandDensity.CODEC.codec());
+        Registry.register(BuiltInRegistries.DENSITY_FUNCTION_TYPE, Identifier.fromNamespaceAndPath(MOD_ID, "terrain_offset"), indev2.world.TerrainOffset.CODEC.codec());
         BiomePortals.register();
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             for (var level : server.getAllLevels()) {

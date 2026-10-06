@@ -7,7 +7,9 @@
     "PortalShapeMixin",
     "NetherPortalBlockMixin",
     "WorldDimensionsMixin",
-    "ServerLevelMixin"
+    "ServerLevelMixin",
+    "ChunkStatusTasksMixin",
+    "StructureManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

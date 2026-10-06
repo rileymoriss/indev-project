@@ -17,7 +17,7 @@ import net.minecraft.world.level.biome.Biomes;
 import indev2.world.FiniteIslandGenerator;
 
 /** Palette shared by the creation menu, dye detection, blocks, and dimension routing. */
-public enum BiomeDestination {
+public enum BiomeDestination implements PortalDestination {
     FOREST("forest", Items.GREEN_DYE, 0x59b83c, Biomes.FOREST, Biomes.FLOWER_FOREST, Biomes.BIRCH_FOREST, Biomes.OLD_GROWTH_BIRCH_FOREST),
     DESERT("desert", Items.YELLOW_DYE, 0xf9df45, Biomes.DESERT),
     JUNGLE("jungle", Items.LIME_DYE, 0x80c71f, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE, Biomes.BAMBOO_JUNGLE),
